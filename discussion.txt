@@ -2,18 +2,18 @@
 
 2. Compilation fails when the test_function declaration line is excluded because the compiler does not know the input or output bit vector size of multiply_unsigned. Including the line allows for the compiler to infer that the multiply_unsigned's are compared with input types of Bit#(8) and output types of Bit#(16). Only one multiply_unsigned needs to have its inputs defined because the compiler can infer for the other.
 
-3. It is an unsigned multiplier because it passes the unsigned_multiplier TB.
+3. It is an unsigned multiplier because it passes the unsigned_multiplier and fails the signed_multiplier TBs.
 
 4.
 Current Bits | Previous Bit | Original Booth Encoding | Radix-4 Booth Encoding
 -------------+--------------+-------------------------+-----------------------
-    00       |      0       |                         |           
-    00       |      1       |                         |           
+    00       |      0       |           00            |         00
+    00       |      1       |           0+            |         0+
     01       |      0       |           +-            |         0+
-    01       |      1       |                         |           
-    10       |      0       |                         |           
-    10       |      1       |                         |           
-    11       |      0       |                         |           
-    11       |      1       |                         |           
+    01       |      1       |           +0            |         +0
+    10       |      0       |           -0            |         -0
+    10       |      1       |           -+            |         0-
+    11       |      0       |           0-            |         0-
+    11       |      1       |           00            |         00
 
 5.

@@ -46,6 +46,16 @@ function Bit#(TAdd#(n,n)) multiply_by_adding( Bit#(n) a, Bit#(n) b );
 endfunction
 
 
+function Bit#(n) sra(Bit#(n) a, Integer n);
+    Int#(n) a_int = unpack(a);
+    return pack(a_int>>n);
+endfunction
+
+function Bit#(n) sla(Bit#(n) a, Integer n);
+    Int#(n) a_int = unpack(a);
+    return pack(a_int<<n);
+endfunction
+
 
 // Multiplier Interface
 interface Multiplier#( numeric type n );
@@ -67,7 +77,7 @@ module mkFoldedMultiplier( Multiplier#(n) );
     Reg#(Bit#(n)) tp <- mkRegU();
     Reg#(Bit#(TAdd#(TLog#(n),1))) i <- mkReg( fromInteger(valueOf(n)+1) );
 
-    rule mulStep if(i<fromInteger(valueOf(n)));
+    rule mulStep(i<fromInteger(valueOf(n)));
         // TODO: Implement this in Exercise 4
         Bit#(n) m=(a[i]==0)?0:b;
         let s=addN(m,tp,0);
@@ -113,65 +123,107 @@ endmodule
 
 // Booth Multiplier
 module mkBoothMultiplier( Multiplier#(n) );
+
     Reg#(Bit#(TAdd#(TAdd#(n,n),1))) m_neg <- mkRegU;
     Reg#(Bit#(TAdd#(TAdd#(n,n),1))) m_pos <- mkRegU;
     Reg#(Bit#(TAdd#(TAdd#(n,n),1))) p <- mkRegU;
     Reg#(Bit#(TAdd#(TLog#(n),1))) i <- mkReg( fromInteger(valueOf(n)+1) );
 
-    //rule mul_step( /* guard goes here */ );
+    rule mul_step(i<fromInteger(valueOf(n)));
         // TODO: Implement this in Exercise 6
-    //endrule
+        Bit#(TAdd#(TAdd#(n,n),1)) _p=p;
+        let pr=p[1:0];
+        if(pr==2'b01) begin _p=p+m_pos; end
+        if(pr==2'b10) begin _p=p+m_neg; end
+        p<=sra(_p,1);
+        i<=i+1;
+    endrule
 
     method Bool start_ready();
         // TODO: Implement this in Exercise 6
-        return False;
+        return i==fromInteger(valueOf(n)+1);
     endmethod
 
     method Action start( Bit#(n) m, Bit#(n) r );
         // TODO: Implement this in Exercise 6
+        if(i==fromInteger(valueOf(n)+1)) begin
+            m_pos<={m,0};
+            m_neg<={(-m),0};
+            p<={0,r,1'b0};
+            i<=0;
+        end
     endmethod
 
     method Bool result_ready();
         // TODO: Implement this in Exercise 6
-        return False;
+        return i==fromInteger(valueOf(n));
     endmethod
 
     method ActionValue#(Bit#(TAdd#(n,n))) result();
         // TODO: Implement this in Exercise 6
-        return 0;
+        if(i==fromInteger(valueOf(n))) begin
+            i<=i+1;
+            return p[2*valueOf(n):1];
+        end else begin
+            return 0;
+        end
     endmethod
+
 endmodule
 
 
 
 // Radix-4 Booth Multiplier
 module mkBoothMultiplierRadix4( Multiplier#(n) );
+
     Reg#(Bit#(TAdd#(TAdd#(n,n),2))) m_neg <- mkRegU;
     Reg#(Bit#(TAdd#(TAdd#(n,n),2))) m_pos <- mkRegU;
     Reg#(Bit#(TAdd#(TAdd#(n,n),2))) p <- mkRegU;
     Reg#(Bit#(TAdd#(TLog#(n),1))) i <- mkReg( fromInteger(valueOf(n)/2+1) );
 
-    //rule mul_step( /* guard goes here */ );
+    rule mul_step(i<fromInteger(valueOf(n)/2));
         // TODO: Implement this in Exercise 8
-    //endrule
+        Bit#(TAdd#(TAdd#(n,n),2)) _p=p;
+        let pr=p[2:0];
+        if(pr==3'b001) begin _p=p+m_pos; end
+        if(pr==3'b010) begin _p=p+m_pos; end
+        if(pr==3'b011) begin _p=p+sla(m_pos,1); end
+        if(pr==3'b100) begin _p=p+sla(m_neg,1); end
+        if(pr==3'b101) begin _p=p+m_neg; end
+        if(pr==3'b110) begin _p=p+m_neg; end
+        p<=sra(_p,2);
+        i<=i+1;
+    endrule
 
     method Bool start_ready();
         // TODO: Implement this in Exercise 8
-        return False;
+        return i==fromInteger(valueOf(n)/2+1);
     endmethod
 
     method Action start( Bit#(n) m, Bit#(n) r );
         // TODO: Implement this in Exercise 8
+        if(i==fromInteger(valueOf(n)/2+1)) begin
+            m_pos<={msb(m),m,0};
+            m_neg<={msb(-m),(-m),0};
+            p<={0,r,1'b0};
+            i<=0;
+        end
     endmethod
 
     method Bool result_ready();
-        // TODO: Implement this in Exercise 8
-        return False;
+        // TODO: Implement this in Exercise 6
+        return i==fromInteger(valueOf(n)/2);
     endmethod
 
     method ActionValue#(Bit#(TAdd#(n,n))) result();
-        // TODO: Implement this in Exercise 8
-        return 0;
+        // TODO: Implement this in Exercise 6
+        if(i==fromInteger(valueOf(n)/2)) begin
+            i<=i+1;
+            return p[2*valueOf(n):1];
+        end else begin
+            return 0;
+        end
     endmethod
+
 endmodule
 
