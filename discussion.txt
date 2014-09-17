@@ -16,4 +16,4 @@ Current Bits | Previous Bit | Original Booth Encoding | Radix-4 Booth Encoding
     11       |      0       |           0-            |         0-
     11       |      1       |           00            |         00
 
-5.
+5. No. Yes, because it decreases cycles at the cost of area.
